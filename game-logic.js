@@ -1,3 +1,4 @@
+import { Children } from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -132,4 +133,52 @@ class ChristmasApp{
         this.snowSystem.userData = { vels };
         this.scene.add(this.snowSystem);
     }
+    loadTreeModel(){
+        this.treeGroup = new THREE.Group();
+        this.scene.add(this.treeGroup);
+        this.ornamentContainer = new THREE.Group();
+        this.treeGroup.add(this.ornamentContainer);
+
+        const loader = new GLTFLoader();
+        loader.load('assets/tree.glb', (gltf) => {
+            const model = gltf.scene;
+
+            model.traverse((child) => {
+                if(Child.isMesh){
+                    Child.castShadow = true;
+                    child.receiveShadow = true;
+                    child.name = "TreeSurface";
+                }
+            });
+            const box = new THREE.Box3().setFromObject(model);
+            const size = new THREE.Vector3(); box.getSize(size);
+            const center = new THREE.Vector3(); box.getCenter(center);
+            const currentY = size.y || 1;
+            const scaleFactor = TARGET_TREE_HEIGHT / currentY;
+
+            model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            model.position.x = -center.x * scaleFactor;
+            model.position.y = -box.min.y * scaleFactor;
+            model.position.z = -center.z * scaleFactor;
+
+            this.treeGroup.add(model);
+            this.treeLoaded = true;
+
+            const midHeight = TARGET_TREE_HEIGHT / 2;
+            this.controls.target.set(0, midHeight, 0);
+            this.camera.position.set(0, midHeight, TARGET_TREE_HEIGHT * 1.5);
+
+            const loaderDiv = document.getElementById('loader');
+            if(loaderDiv){
+                setTimeout(() => {
+                    loaderDiv,Style.opacity = 0;
+                    setTimeout(() => loaderDiv.remove(), 500);
+                }, 2500);
+            }
+        }, undefined, (err) => {
+            console.error(err);
+            alert("Could not load tree.glb");
+        });
+    }
+    
 }
