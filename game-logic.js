@@ -180,5 +180,51 @@ class ChristmasApp{
             alert("Could not load tree.glb");
         });
     }
-    
+    setupInteraction(){
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.ghost = new THREE.Mesh(
+            new THREE.SphereGeometry(ORNAMENT_SIZE, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
+        );
+        this.ghost.visible = false;
+        this.scene.add(this.ghost);
+
+        const onMove = (e) => {
+            if(!this.treeLoaded) return;
+            const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            this.mouse.x = (x / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(y / window.innerHeight) * 2 + 1;
+            this.checkIntersection();
+        };
+        const onClick = (e) => {
+            if (e.target.closest('#ui')) return;
+            if (this.ghost.visible) this.placeOrnament(this.ghost.position, this.ghost.quaternion, this.selectedColor);
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerdown', onClick);
+        window.addEventListener('resize', () => this.onResize());
+    }
+    checkIntersection(){
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const surfaces = [];
+        this.treeGroup.traverse((child) => {
+            if(child.isMesh && child.name === "TreeSurface") surfaces.push(child);
+        });
+        const intersects = this.raycaster.intersectObjects(surfaces);
+        if(intersects.length > 0){
+            const hit = intersects[0];
+            this.ghost.visible = true;
+            this.ghost.material.color.setHex(this.selectedColor);
+            const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
+            this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(0.06)));
+            this.ghost.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), normal));
+        } else {
+            this.ghost.visible = false;
+        }
+    }
+    placeOrnament(){
+        
+    }
 }
