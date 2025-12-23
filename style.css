@@ -7,6 +7,91 @@
     font-style: normal;
 }
 
+:root {
+    --bg-color: #050510;
+    --panel-bg: rgba(20,20,30,0.85);
+    --accent: #d42c2c;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    color: white;
+    -webkit-user-select: none;
+}
+
+#glCanvas {
+    width: 100vw;
+    overflow: hidden;
+    display: block;
+    outline: none;
+}
+
+#ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.top-bar{
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    padding: 0;
+    background: transparent;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.game-logo {
+    width: 350px;
+    max-width: 60vw;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+/*buttons*/
+.actions{
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: auto;
+}
+
+.actions button {
+    background: transparent;
+    border: none;
+    padding: none;
+    cursor: pointer;
+    width: 60px;
+    height: 60px;
+    transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+
+.actions button img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+.actions button:hover{
+    transform: scale(1.2);
+}
+
+.actions button:active{
+    transform: scale(0.95);
+}
+
 #loader {
     position: absolute;
     top: 0;
