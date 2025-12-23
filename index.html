@@ -16,6 +16,7 @@
     </script>
 </head>
 <body>
+    <!--progress loading...-->
     <div id="loader">
         <div class="winter-loader-container">
             <div class="text-area">
@@ -28,5 +29,34 @@
             </div>
         </div>
     </div>
+    <div id="ui">
+        <div class="top-bar">
+            <img src="assets/logo.png" class="game-logo" alt="Evergreen">
+        </div>
+
+        <div class="actions">
+            <button id="btn-snap" title="Download Image">
+                <img src="assets/camera.png" alt="Camera">
+            </button>
+            <button id="btn-clear" title="Clear All">
+                <img src="assets/trash.png" alt="Trash">
+            </button>
+        </div>
+
+        <!--Color palette 3d balls-->
+        <div class="controls-area">
+            <div id="palette"></div>
+            <div class="hint">Drag to Rotate ∞ Tap tree to decorate</div>
+        </div>
+
+        <button id="btn-gift" title="Open Gift">
+            <img src="assets/gift.png" alt="Gift Box">
+        </button>
+    </div>
+
+    <canvas id="glCanvas"></canvas>
+
+    <!--js fetch-->
+    <script type="module" src="game-logic.js"></script>
 </body>
 </html>
