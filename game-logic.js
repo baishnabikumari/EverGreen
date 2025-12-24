@@ -74,7 +74,7 @@ class ChristmasApp {
         this.floor.rotation.x = -Math.PI / 2;
         this.floor.receiveShadow = true;
         this.floor.name = 'FloorSurface';
-        this.scene.add(floor);
+        this.scene.add(this.floor);
 
         //controls
         this.controls = new OrbitControls(this.camera, this.canvas);
@@ -137,7 +137,7 @@ class ChristmasApp {
             bevelEnabled: true,
             bevelThickness: 0.03,
             bevelSize: 0.02,
-            bevelSegment: 3
+            bevelSegments: 3
         };
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.center();
@@ -314,7 +314,7 @@ class ChristmasApp {
                 if (child.isMesh && child.name === "TreeSurface") intersectTarget.push(child);
             });
         }
-        const intersects = this.raycaster.intersectObjects(surfaces);
+        const intersects = this.raycaster.intersectObjects(intersectTarget);
 
         if (intersects.length > 0) {
             const hit = intersects[0];
@@ -380,7 +380,7 @@ class ChristmasApp {
 
             mesh.scale.set(0, 0, 0);
             let s = 0;
-            const pop () => {
+            const pop = () => {
                 s += 0.15;
                 mesh.scale.set(s, s, s);
                 if (s < 1) requestAnimationFrame(pop)
@@ -435,12 +435,29 @@ class ChristmasApp {
                 const type = btn.dataset.type;
 
                 if(type === 'gift-mode'){
-                    this.selectedColor
-                }
+                    this.selectedShape = 'gift-1';
+                    paletteContainer.classList.add('hidden');
+                    giftSubmenu.classList.add('visible');
 
-                this.selectedShape = btn.dataset.type;
-                console.log("Selected Shape:", this.selectedShape);
-                this.updateGhostGeometry();
+                    document.querySelectorAll('.gift-option').forEach(g => g.classList.remove('active'));
+                    document.querySelectorAll('.gift-option[data-gift="1"]').classList.add('active');
+                } else {
+                this.selectedShape = type;
+                paletteContainer.classList.remove('hidden');
+                giftSubmenu.classList.remove('visible');
+                }
+                this.updateGhost();
+            });
+        });
+        const giftOptions = document.querySelectorAll('.gift-option');
+        giftOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                giftOptions.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+
+                const num = opt.dataset.gift;
+                this.selectedShape = `gift-${num}`;
+                this.updateGhost();
             });
         });
     }
