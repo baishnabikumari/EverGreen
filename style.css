@@ -122,8 +122,8 @@ body {
 }
 
 .item-btn{
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     background: transparent;
     border: 2px solid transparent;
     border-radius: 12px;
@@ -135,8 +135,8 @@ body {
 }
 
 .item-btn img{
-    width: 80%;
-    height: 80%;
+    width: 120%;
+    height: 120%;
     object-fit: contain;
     filter: brightness(0.9);
 }
