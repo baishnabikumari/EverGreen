@@ -15,6 +15,7 @@ class ChristmasApp {
         this.scene = new THREE.Scene();
         this.ornaments = [];
         this.selectedColor = COLORS[0];
+        this.selectedShape = 'bauble';
         this.treeLoaded = false;
 
         this.init();
@@ -89,6 +90,38 @@ class ChristmasApp {
         );
         this.composer.addPass(bloomPass);
         this.createSnow();
+    }
+
+    //star shape 
+    createStarGeometry(){
+        const shape = new THREE.Shape();
+        const points = 5;
+        const outerRadius = ORNAMENT_SIZE * 1.2;
+        const innerRadius = ORNAMENT_SIZE * 0.5;
+
+        for(let i=0; i<points * 2; i++){
+            const r = (i % 2 === 0) ? outerRadius : innerRadius;
+            const a = (i / (points * 2)) * Math.PI * 2;
+            const x = Math.cos(a) * r;
+            const y = Math.sin(a) * r;
+            if(i === 0) shape.moveTo(x,y);
+            else shape.lineTo(x, y);
+        }
+        shape.closePath();
+
+        const extrudeSettings = {
+            depth: 0.05,
+            bevelEnabled: true,
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+            bevelSegment: 3
+        };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry.center();
+        return geometry;
+    }
+    createBaubleGeometry(){
+        return new THREE.SphereGeometry(ORNAMENT_SIZE, 32, 32);
     }
     createSnow() {
         const canvas = document.createElement('canvas');
@@ -184,10 +217,14 @@ class ChristmasApp {
     setupInteraction() {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        this.ghost = new THREE.Mesh(
-            new THREE.SphereGeometry(ORNAMENT_SIZE, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
-        );
+
+        this.ghostGeometry = this.createBaubleGeometry();
+        this.ghostMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.5
+        });
+        this.ghost = new THREE.Mesh(this.ghostGeometry, this.ghostMaterial);
         this.ghost.visible = false;
         this.scene.add(this.ghost);
 
@@ -201,11 +238,21 @@ class ChristmasApp {
         };
         const onClick = (e) => {
             if (e.target.closest('#ui')) return;
-            if (this.ghost.visible) this.placeOrnament(this.ghost.position, this.ghost.quaternion, this.selectedColor);
+            if (this.ghost.visible){
+                this.placeOrnament(this.ghost.position, this.ghost.quaternion, this.selectedColor, this.selectedShape);
+            }
         };
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerdown', onClick);
         window.addEventListener('resize', () => this.onResize());
+    }
+    updateGhostGeometry(){
+        this.ghost.geometry.dispose();
+        if(this.selectedShape === 'star'){
+            this.ghost.geometry = this.createStarGeometry();
+        } else {
+            this.ghost.geometry = this.createBaubleGeometry();
+        }
     }
     checkIntersection() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -219,19 +266,29 @@ class ChristmasApp {
             this.ghost.visible = true;
             this.ghost.material.color.setHex(this.selectedColor);
             const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
-            this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(0.06)));
-            this.ghost.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal));
+
+            const offsetAmount = this.selectedShape === 'star' ? 0.08 : 0.06;
+            this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(offsetAmount)));
+            this.ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
         } else {
             this.ghost.visible = false;
         }
     }
-    placeOrnament(pos, quat, color) {
+    placeOrnament(pos, quat, color, shapeType) {
+        let geometry;
+
+        if(shapeType === 'star'){
+            geometry = this.createStarGeometry();
+        } else {
+            geometry = this.createBaubleGeometry();
+        }
+
         const mesh = new THREE.Mesh(
-            new THREE.SphereGeometry(ORNAMENT_SIZE, 32, 32),
+            geometry,
             new THREE.MeshStandardMaterial({
                 color: color,
-                metalness: 0.7,
-                roughness: 0.2
+                metalness: 0.8,
+                roughness: 0.15
             })
         );
         mesh.position.copy(pos);
@@ -293,6 +350,7 @@ class ChristmasApp {
 
                 this.selectedShape = btn.dataset.type;
                 console.log("Selected Shape:", this.selectedShape);
+                this.updateGhostGeometry();
             });
         });
     }
