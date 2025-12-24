@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
-import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
-import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const COLORS = [0xd42c2c, 0xd4af37, 0x228822, 0x3355ff, 0xffffff, 0xff00ff];
 const TARGET_TREE_HEIGHT = 4.0;
 const ORNAMENT_SIZE = 0.12;
 
-class ChristmasApp{
-    constructor(){
+class ChristmasApp {
+    constructor() {
         this.canvas = document.querySelector('#glCanvas');
         this.scene = new THREE.Scene();
         this.ornaments = [];
@@ -23,8 +23,8 @@ class ChristmasApp{
         this.setupUI();
         this.animate();
     }
-    init(){
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true});
+    init() {
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
@@ -49,7 +49,7 @@ class ChristmasApp{
         this.scene.add(ambientLight);
 
         const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        mainLight.position.set(5,10,5);
+        mainLight.position.set(5, 10, 5);
         mainLight.castShadow = true;
         mainLight.shadow.mapSize.width = 2048;
         mainLight.shadow.mapSize.height = 2048;
@@ -90,30 +90,30 @@ class ChristmasApp{
         this.composer.addPass(bloomPass);
         this.createSnow();
     }
-    createSnow(){
+    createSnow() {
         const canvas = document.createElement('canvas');
         canvas.width = 32; canvas.height = 32;
         const context = canvas.getContext('2d');
 
-        const gradient = context.createRadialGradient(16,16,0,16,16,16);
+        const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
         gradient.addColorStop(0, 'rgba(255,255,255,1)');
         gradient.addColorStop(0.5, 'rgba(255,255,255,0.8)');
         gradient.addColorStop(1, 'rgba(255,255,255,0)');
 
         context.fillStyle = gradient;
-        context.fillRect(0,0,32,32);
+        context.fillRect(0, 0, 32, 32);
         const snowTexture = new THREE.CanvasTexture(canvas);
         const count = 2500;
         const positions = new Float32Array(count * 3);
         const vels = [];
-        for(let i=0; i<count; i++) {
-            positions[i*3] = (Math.random() - 0.5) * 20,
-            positions[i*3+1] = Math.random() * 15;
-            positions[i*3+2] = (Math.random() - 0.5) * 20;
+        for (let i = 0; i < count; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 20,
+                positions[i * 3 + 1] = Math.random() * 15;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
 
             vels.push({
-                x: (Math.random()-0.5) * 0.02,
-                y: -(Math.random()*0.02 + 0.01),
+                x: (Math.random() - 0.5) * 0.02,
+                y: -(Math.random() * 0.02 + 0.01),
                 offset: Math.random() * 100
             });
         }
@@ -133,7 +133,7 @@ class ChristmasApp{
         this.snowSystem.userData = { vels };
         this.scene.add(this.snowSystem);
     }
-    loadTreeModel(){
+    loadTreeModel() {
         this.treeGroup = new THREE.Group();
         this.scene.add(this.treeGroup);
         this.ornamentContainer = new THREE.Group();
@@ -144,7 +144,7 @@ class ChristmasApp{
             const model = gltf.scene;
 
             model.traverse((child) => {
-                if(child.isMesh){
+                if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     child.name = "TreeSurface";
@@ -170,7 +170,7 @@ class ChristmasApp{
             this.controls.update();
 
             const loaderDiv = document.getElementById('loader');
-            if(loaderDiv){
+            if (loaderDiv) {
                 setTimeout(() => {
                     loaderDiv.style.opacity = 0;
                     setTimeout(() => loaderDiv.remove(), 500);
@@ -181,7 +181,7 @@ class ChristmasApp{
             alert("Could not load tree.glb");
         });
     }
-    setupInteraction(){
+    setupInteraction() {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.ghost = new THREE.Mesh(
@@ -192,7 +192,7 @@ class ChristmasApp{
         this.scene.add(this.ghost);
 
         const onMove = (e) => {
-            if(!this.treeLoaded) return;
+            if (!this.treeLoaded) return;
             const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             this.mouse.x = (x / window.innerWidth) * 2 - 1;
@@ -207,25 +207,25 @@ class ChristmasApp{
         window.addEventListener('pointerdown', onClick);
         window.addEventListener('resize', () => this.onResize());
     }
-    checkIntersection(){
+    checkIntersection() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const surfaces = [];
         this.treeGroup.traverse((child) => {
-            if(child.isMesh && child.name === "TreeSurface") surfaces.push(child);
+            if (child.isMesh && child.name === "TreeSurface") surfaces.push(child);
         });
         const intersects = this.raycaster.intersectObjects(surfaces);
-        if(intersects.length > 0){
+        if (intersects.length > 0) {
             const hit = intersects[0];
             this.ghost.visible = true;
             this.ghost.material.color.setHex(this.selectedColor);
             const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
             this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(0.06)));
-            this.ghost.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), normal));
+            this.ghost.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal));
         } else {
             this.ghost.visible = false;
         }
     }
-    placeOrnament(pos, quat, color){
+    placeOrnament(pos, quat, color) {
         const mesh = new THREE.Mesh(
             new THREE.SphereGeometry(ORNAMENT_SIZE, 32, 32),
             new THREE.MeshStandardMaterial({
@@ -241,16 +241,16 @@ class ChristmasApp{
         this.ornamentContainer.add(mesh);
         this.ornaments.push({ mesh, color: color });
 
-        mesh.scale.set(0,0,0);
+        mesh.scale.set(0, 0, 0);
         let s = 0;
         const pop = () => {
             s += 0.15;
-            mesh.scale.set(s,s,s);
-            if(s < 1) requestAnimationFrame(pop);
+            mesh.scale.set(s, s, s);
+            if (s < 1) requestAnimationFrame(pop);
         };
         pop();
     }
-    setupUI(){
+    setupUI() {
         const palette = document.getElementById('palette');
         palette.innerHTML = '';
 
@@ -266,7 +266,7 @@ class ChristmasApp{
             palette.appendChild(btn);
         });
         document.getElementById('btn-clear').onclick = () => {
-            if(confirm("Remove all decorations?")){
+            if (confirm("Remove all decorations?")) {
                 this.ornaments.forEach(o => this.ornamentContainer.remove(o.mesh));
                 this.ornaments = [];
             }
@@ -278,27 +278,44 @@ class ChristmasApp{
             link.href = this.canvas.toDataURL('image/png');
             link.click();
         };
+        const menu = document.getElementById('selection-menu');
+        const giftBtn = document.getElementById('btn-gift');
+
+        giftBtn.onclick = () => {
+            menu.classList.toggle('open');
+        };
+        const itemBtns = menu.querySelectorAll('.item-btn');
+        itemBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+
+                itemBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.selectedShape = btn.dataset.type;
+                console.log("Selected Shape:", this.selectedShape);
+            });
+        });
     }
-    onResize(){
+    onResize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.composer.setSize(window.innerWidth, window.innerHeight);
     }
-    render(){
+    render() {
         this.composer.render();
     }
-    animate(){
+    animate() {
         requestAnimationFrame(() => this.animate());
         this.controls.update();
 
-        if(this.snowSystem){
+        if (this.snowSystem) {
             const positions = this.snowSystem.geometry.attributes.position.array;
             const vels = this.snowSystem.userData.vels;
-            for(let i = 0; i < vels.length; i++){
-                positions[i*3+1] += vels[i].y;
-                positions[i*3] += Math.sin(Date.now()*0.001 + i)*vels[i].x;
-                if(positions[i*3+1] < 0) positions[i*3+1] = 12;
+            for (let i = 0; i < vels.length; i++) {
+                positions[i * 3 + 1] += vels[i].y;
+                positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * vels[i].x;
+                if (positions[i * 3 + 1] < 0) positions[i * 3 + 1] = 12;
             }
             this.snowSystem.geometry.attributes.position.needsUpdate = true;
         }
