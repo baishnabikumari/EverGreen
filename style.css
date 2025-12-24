@@ -330,3 +330,60 @@ body {
 #btn-gift:active{
     transform: scale(0.95);
 }
+
+#gift-submenu {
+    position: absolute;
+    bottom: 30px;
+    right: 120px;
+    background: rgba(60,60,60,0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translate(20px);
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+#gift-submenu.visible{
+    opacity: 1;
+    transform: translate(0);
+    pointer-events: auto;
+}
+
+.gift-option {
+    width: 50px;
+    height: 50px;
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gift-option img{
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: invert(1);
+}
+
+.gift-option:hover{
+    background: rgba(255,255,255,0.1);
+}
+
+.gift-option.active{
+    border-color: #fff;
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.1);
+}
+
+.controls-area.hidden{
+    display: none;
+}

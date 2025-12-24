@@ -14,12 +14,15 @@ class ChristmasApp {
         this.canvas = document.querySelector('#glCanvas');
         this.scene = new THREE.Scene();
         this.ornaments = [];
+        this.gifts = [];
         this.selectedColor = COLORS[0];
         this.selectedShape = 'bauble';
+        this.giftModels = {};
         this.treeLoaded = false;
 
         this.init();
         this.loadTreeModel();
+        this.loadGiftModels();
         this.setupInteraction();
         this.setupUI();
         this.animate();
@@ -67,9 +70,10 @@ class ChristmasApp {
             roughness: 1,
             metalness: 0.0
         });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
+        this.floor = new THREE.Mesh(floorGeo, floorMat);
+        this.floor.rotation.x = -Math.PI / 2;
+        this.floor.receiveShadow = true;
+        this.floor.name = 'FloorSurface';
         this.scene.add(floor);
 
         //controls
@@ -92,19 +96,38 @@ class ChristmasApp {
         this.createSnow();
     }
 
+    loadGiftModels() {
+        const loader = new GLTFLoader();
+        const giftFiles = ['giftbox-1.glb', 'giftbox-2.glb', 'giftbox-3.glb', 'giftbox-4.glb'];
+
+        giftFiles.forEach((file, index) => {
+            loader.load(`assets/${file}`, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(c => {
+                    if (c.isMesh) {
+                        c.castShadow = true;
+                        c.receiveShadow = true;
+                    }
+                });
+                const key = `gift-${index + 1}`;
+                this.giftModels[key] = model;
+            });
+        });
+    }
+
     //star shape 
-    createStarGeometry(){
+    createStarGeometry() {
         const shape = new THREE.Shape();
         const points = 5;
         const outerRadius = ORNAMENT_SIZE * 1.2;
         const innerRadius = ORNAMENT_SIZE * 0.5;
 
-        for(let i=0; i<points * 2; i++){
+        for (let i = 0; i < points * 2; i++) {
             const r = (i % 2 === 0) ? outerRadius : innerRadius;
             const a = (i / (points * 2)) * Math.PI * 2;
             const x = Math.cos(a) * r;
             const y = Math.sin(a) * r;
-            if(i === 0) shape.moveTo(x,y);
+            if (i === 0) shape.moveTo(x, y);
             else shape.lineTo(x, y);
         }
         shape.closePath();
@@ -120,7 +143,7 @@ class ChristmasApp {
         geometry.center();
         return geometry;
     }
-    createBaubleGeometry(){
+    createBaubleGeometry() {
         return new THREE.SphereGeometry(ORNAMENT_SIZE, 32, 32);
     }
     createSnow() {
@@ -238,74 +261,132 @@ class ChristmasApp {
         };
         const onClick = (e) => {
             if (e.target.closest('#ui')) return;
-            if (this.ghost.visible){
-                this.placeOrnament(this.ghost.position, this.ghost.quaternion, this.selectedColor, this.selectedShape);
+            if (this.ghost.visible) {
+                this.placeItem(this.ghost.position, this.ghost.quaternion);
             }
         };
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerdown', onClick);
         window.addEventListener('resize', () => this.onResize());
     }
-    updateGhostGeometry(){
-        this.ghost.geometry.dispose();
-        if(this.selectedShape === 'star'){
-            this.ghost.geometry = this.createStarGeometry();
-        } else {
-            this.ghost.geometry = this.createBaubleGeometry();
+    updateGhost() {
+        this.scene.remove(this.ghost);
+        if (this.ghost.geometry) this.ghost.geometry.dispose();
+
+        if (this.selectedShape.startsWith('gift')) {
+            const model = this.giftModels[this.selectedShape];
+            if (model) {
+                this.ghost = model.clone();
+                this.ghost.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.5;
+                        child.material.depthWrite = false;
+                    }
+                });
+                this.ghost.scale.set(0.2, 0.2, 0.2);
+            } else {
+                this.ghost = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+            }
         }
+        else if (this.selectedShape === 'star') {
+            const geom = this.createStarGeometry();
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+            this.ghost = new THREE.Mesh(geom, mat);
+        }
+        else {
+            const geom = this.createBaubleGeometry();
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+            this.ghost = new THREE.Mesh(geom, mat);
+        }
+        this.ghost.visible = false;
+        this.scene.add(this.ghost);
     }
     checkIntersection() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const surfaces = [];
-        this.treeGroup.traverse((child) => {
-            if (child.isMesh && child.name === "TreeSurface") surfaces.push(child);
-        });
+        let intersectTarget = [];
+        const isGiftMode = this.selectedShape.startsWith('gift');
+        if (isGiftMode) {
+            intersectTarget = [this.floor];
+        } else {
+            this.treeGroup.traverse((child) => {
+                if (child.isMesh && child.name === "TreeSurface") intersectTarget.push(child);
+            });
+        }
         const intersects = this.raycaster.intersectObjects(surfaces);
+
         if (intersects.length > 0) {
             const hit = intersects[0];
             this.ghost.visible = true;
-            this.ghost.material.color.setHex(this.selectedColor);
-            const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
 
-            const offsetAmount = this.selectedShape === 'star' ? 0.08 : 0.06;
-            this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(offsetAmount)));
-            this.ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+            if (!isGiftMode && this.ghost.material) {
+                this.ghost.material.color.setHex(this.selectedColor);
+            }
+            if (isGiftMode) {
+                this.ghost.position.copy(hit.point);
+                this.ghost.quaternion.set(0, 0, 0, 1);
+            } else {
+                const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
+                const offsetAmount = this.selectedShape === 'star' ? 0.08 : 0.06;
+                this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(offsetAmount)));
+                this.ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+            }
         } else {
             this.ghost.visible = false;
         }
     }
-    placeOrnament(pos, quat, color, shapeType) {
-        let geometry;
+    placeItem(pos, quat) {
+        if (this.selectedShape.startsWith('gift')) {
+            const originalModel = this.giftModels[this.selectedShape];
+            if (!originalModel) return;
 
-        if(shapeType === 'star'){
-            geometry = this.createStarGeometry();
-        } else {
-            geometry = this.createBaubleGeometry();
+            const mesh = originalModel.clone();
+            mesh.position.copy(pos);
+            mesh.quaternion.copy(quat);
+            mesh.scale.set(0, 0, 0);
+
+            this.scene.add(mesh);
+            this.gifts.push(mesh);
+
+            let s = 0;
+            const targetScale = 0.2;
+            const pop = () => {
+                s += 0.02;
+                mesh.scale.set(s, s, s);
+                if (s < targetScale) requestAnimationFrame(pop);
+            };
+            pop();
         }
+        else {
+            let geometry;
+            if (this.selectedShape === 'star') geometry = this.createStarGeometry();
+            else geometry = this.createBaubleGeometry();
 
-        const mesh = new THREE.Mesh(
-            geometry,
-            new THREE.MeshStandardMaterial({
-                color: color,
-                metalness: 0.8,
-                roughness: 0.15
-            })
-        );
-        mesh.position.copy(pos);
-        mesh.quaternion.copy(quat);
-        mesh.castShadow = true;
+            const mesh = new THREE.Mesh(
+                geometry,
+                new THREE.MeshStandardMaterial({
+                    color: this.selectedColor,
+                    metalness: 0.8,
+                    roughness: 0.15
+                })
+            );
+            mesh.position.copy(pos);
+            mesh.quaternion.copy(quat);
+            mesh.castShadow = true;
 
-        this.ornamentContainer.add(mesh);
-        this.ornaments.push({ mesh, color: color });
+            this.ornamentContainer.add(mesh);
+            this.ornaments.push({ mesh, color: this.selectedColor });
 
-        mesh.scale.set(0, 0, 0);
-        let s = 0;
-        const pop = () => {
-            s += 0.15;
-            mesh.scale.set(s, s, s);
-            if (s < 1) requestAnimationFrame(pop);
-        };
-        pop();
+            mesh.scale.set(0, 0, 0);
+            let s = 0;
+            const pop () => {
+                s += 0.15;
+                mesh.scale.set(s, s, s);
+                if (s < 1) requestAnimationFrame(pop)
+            };
+            pop();
+        }
     }
     setupUI() {
         const palette = document.getElementById('palette');
@@ -326,6 +407,8 @@ class ChristmasApp {
             if (confirm("Remove all decorations?")) {
                 this.ornaments.forEach(o => this.ornamentContainer.remove(o.mesh));
                 this.ornaments = [];
+                this.gifts.forEach(g => this.scene.remove(g));
+                this.gifts = [];
             }
         };
         document.getElementById('btn-snap').onclick = () => {
@@ -337,6 +420,8 @@ class ChristmasApp {
         };
         const menu = document.getElementById('selection-menu');
         const giftBtn = document.getElementById('btn-gift');
+        const paletteContainer = document.querySelector('.controls-area');
+        const giftSubmenu = document.getElementById('gift-submenu');
 
         giftBtn.onclick = () => {
             menu.classList.toggle('open');
@@ -347,6 +432,11 @@ class ChristmasApp {
 
                 itemBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                const type = btn.dataset.type;
+
+                if(type === 'gift-mode'){
+                    this.selectedColor
+                }
 
                 this.selectedShape = btn.dataset.type;
                 console.log("Selected Shape:", this.selectedShape);
