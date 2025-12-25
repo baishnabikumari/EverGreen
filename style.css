@@ -331,7 +331,7 @@ body {
     transform: scale(0.95);
 }
 
-#gift-submenu {
+#gift-submenu, #bell-submenu {
     position: absolute;
     bottom: 30px;
     right: 120px;
@@ -348,13 +348,13 @@ body {
     transition: all 0.3s ease;
 }
 
-#gift-submenu.visible{
+#gift-submenu.visible, #bell-submenu.visible{
     opacity: 1;
     transform: translate(0);
     pointer-events: auto;
 }
 
-.gift-option {
+.gift-option, #bell-option {
     width: 50px;
     height: 50px;
     background: transparent;
@@ -367,18 +367,18 @@ body {
     justify-content: center;
 }
 
-.gift-option img{
+.gift-option img, .bell-option img{
     width: 80%;
     height: 80%;
     object-fit: contain;
     filter: invert(1);
 }
 
-.gift-option:hover{
+.gift-option:hover, .bell-option:hover{
     background: rgba(255,255,255,0.1);
 }
 
-.gift-option.active{
+.gift-option.active, .bell-option.active{
     border-color: #fff;
     background: rgba(255,255,255,0.2);
     transform: scale(1.1);
