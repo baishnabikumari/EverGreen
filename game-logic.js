@@ -19,14 +19,14 @@ class ChristmasApp {
         this.selectedShape = 'bauble';
 
         this.giftModels = {};
-        this.bellModels = {};
+        //this.bellModels = {};
 
         this.treeLoaded = false;
 
         this.init();
         this.loadTreeModel();
         this.loadGiftModels();
-        this.loadBellTextures();
+        //this.loadBellTextures();
 
         this.setupInteraction();
         this.setupUI();
@@ -120,7 +120,7 @@ class ChristmasApp {
         });
     }
 
-    loadBellTextures() {
+    /*loadBellTextures() {
         const loader = new GLTFLoader();
         const bellFiles = ['bell-put1.png', 'bell-put2.png', 'bell-put3.png', 'bell-put4.png'];
 
@@ -129,9 +129,15 @@ class ChristmasApp {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 const key = `bell-${index + 1}`;
                 this.bellModels[key] = texture;
+
+                if(this.selectedShape === key){
+                    this.updateGhost();
+                }
+            }, undefined, (err) => {
+                console.error("Error loading bell texture:", file, err);
             });
         });
-    }
+    } */
 
     //star shape 
     createStarGeometry() {
@@ -318,21 +324,16 @@ class ChristmasApp {
         else if (this.selectedShape.startsWith('bell')) {
             const texture = this.bellModels[this.selectedShape];
             if (texture) {
-                const geometry = new THREE.PlaneGeometry(0.3, 0.3);
+                const geometry = new THREE.PlaneGeometry(0.25, 0.25);
                 const material = new THREE.MeshBasicMaterial({
                     map: texture,
                     transparent: true,
-                    opacity: 0.5,
                     side: THREE.DoubleSide,
                     alphaTest: 0.5
                 });
                 this.ghost = new THREE.Mesh(geometry, material);
             } else {
-                this.ghost = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.1), new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.5
-                }));
+                this.ghost = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5}));
             }
         }
         else if (this.selectedShape === 'star') {
@@ -367,7 +368,7 @@ class ChristmasApp {
 
             const isBellMode = this.selectedShape.startsWith('bell');
 
-            if (!isGiftMode && !isBellMode && this.ghost.material) {
+            if (!isGiftMode && this.ghost.material) {
                 this.ghost.material.color.setHex(this.selectedColor);
             }
             if (isGiftMode) {
@@ -377,7 +378,6 @@ class ChristmasApp {
                 const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
                 let offsetAmount = 0.06;
                 if (this.selectedShape === 'star') offsetAmount = 0.08;
-                if (isBellMode) offsetAmount = 0.02;
 
                 this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(offsetAmount)));
                 this.ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
@@ -411,7 +411,10 @@ class ChristmasApp {
         //bell png
         else if (this.selectedShape.startsWith('bell')) {
             const texture = this.bellModels[this.selectedShape];
-            if (!texture) return;
+            if (!texture){
+                console.warm("Bell texture not ready yet");
+                return;
+            }
 
             //flat plane
             const geometry = new THREE.PlaneGeometry(0.3, 0.3);
@@ -425,8 +428,7 @@ class ChristmasApp {
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(pos);
             mesh.quaternion.copy(quat);
-
-            mesh.castShadow = true;
+            mesh.castShadow = false;
             mesh.receiveShadow = true;
 
             mesh.scale.set(0, 0, 0);
@@ -507,7 +509,7 @@ class ChristmasApp {
         const giftBtn = document.getElementById('btn-gift');
         const paletteContainer = document.querySelector('.controls-area');
         const giftSubmenu = document.getElementById('gift-submenu');
-        const bellSubmenu = document.getElementById('bell-submenu');
+        //const bellSubmenu = document.getElementById('bell-submenu');
 
         giftBtn.onclick = () => {
             menu.classList.toggle('open');
@@ -522,7 +524,7 @@ class ChristmasApp {
                 const type = btn.dataset.type;
 
                 giftSubmenu.classList.remove('visible');
-                bellSubmenu.classList.remove('visible');
+                //bellSubmenu.classList.remove('visible');
                 paletteContainer.classList.remove('hidden');
 
                 if (type === 'gift-mode') {
@@ -533,7 +535,7 @@ class ChristmasApp {
                     document.querySelectorAll('.gift-option').forEach(g => g.classList.remove('active'));
                     const first = document.querySelectorAll('.gift-option[data-gift="1"]');
                     if (first) first.classList.add('active');
-
+                /*
                 } else if (type === 'bell-mode') {
                     this.selectedShape = 'bell-1';
                     paletteContainer.classList.add('hidden');
@@ -542,7 +544,10 @@ class ChristmasApp {
                     document.querySelectorAll('.bell-option').forEach(b => b.classList.remove('active'));
                     const first = document.querySelector('.bell-option[data-bell="1"]');
                     if (first) first.classList.add('active');
-                } else {
+                */
+                } 
+                
+                else {
                     this.selectedShape = type;
                 }
                 this.updateGhost();
@@ -560,6 +565,7 @@ class ChristmasApp {
                 this.updateGhost();
             });
         });
+        /*
         const bellOptions = document.querySelectorAll('.bell-option');
         bellOptions.forEach(opt => {
             opt.addEventListener('click', () => {
@@ -570,6 +576,7 @@ class ChristmasApp {
                 this.updateGhost();
             });
         });
+        */
     }
     onResize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
