@@ -3,10 +3,14 @@
 **Evergreen** is an interactive game where you can decorate a low-poly christmas tree in a snowy winter.
 
 # screenshots
+<img width="1440" height="771" alt="Screenshot 2025-12-26 at 2 11 33 AM" src="https://github.com/user-attachments/assets/28eee071-4110-4737-843b-0db0f5a8ca9b" />
 
+<img width="1440" height="774" alt="Screenshot 2025-12-26 at 2 12 00 AM" src="https://github.com/user-attachments/assets/100fc24f-8b21-4946-9c40-7c558491051a" />
 
 # videos
+https://github.com/user-attachments/assets/8b1ecfe7-dcc7-40c3-8452-42579e451ee0
 
+https://github.com/user-attachments/assets/0c0acd73-0910-45df-a879-a9407f2e6ff6
 
 **Tools**
 -- Three.js, js (core es6 module)
