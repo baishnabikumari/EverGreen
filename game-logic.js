@@ -26,7 +26,7 @@ class ChristmasApp {
         this.init();
         this.loadTreeModel();
         this.loadGiftModels();
-        this.loadBellModels();
+        this.loadBellTextures();
 
         this.setupInteraction();
         this.setupUI();
@@ -120,22 +120,16 @@ class ChristmasApp {
         });
     }
 
-    loadBellModels() {
+    loadBellTextures() {
         const loader = new GLTFLoader();
-        const bellFiles = ['bell-1.glb', 'bell-2.glb', 'bell-3.glb', 'bell-4.glb'];
+        const bellFiles = ['bell-put1.png', 'bell-put2.png', 'bell-put3.png', 'bell-put4.png'];
 
         bellFiles.forEach((file, index) => {
-            loader.load(`assets/${file}`, (gltf) => {
-                const model = gltf.scene;
-                model.traverse(c => {
-                    if (c.isMesh) {
-                        c.castShadow = true;
-                        c.receiveShadow = true;
-                    }
-                });
+            loader.load(`assets/${file}`, (texture) => {
+                texture.colorSpace = THREE.SRGBColorSpace;
                 const key = `bell-${index + 1}`;
-                this.bellModels[key] = model;
-            }, undefined, (err) => console.warn(`Wrroe loading ${file}`, err));
+                this.bellModels[key] = texture;
+            });
         });
     }
 
@@ -228,6 +222,12 @@ class ChristmasApp {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     child.name = "TreeSurface";
+
+                    if(child.material){
+                        child.material.alphaTest = 0.5;
+                        child.material.transparent = true;
+                        child.material.side = THREE.DoubleSide;
+                    }
                 }
             });
             const box = new THREE.Box3().setFromObject(model);
@@ -316,18 +316,17 @@ class ChristmasApp {
         }
         //bells
         else if (this.selectedShape.startsWith('bell')) {
-            const model = this.bellModels[this.selectedShape];
-            if (model) {
-                this.ghost = model.clone();
-                this.ghost.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = true;
-                        child.material.opacity = 0.5;
-                        child.material.depthWrite = false;
-                    }
+            const texture = this.bellModels[this.selectedShape];
+            if (texture) {
+                const geometry = new THREE.PlaneGeometry(0.3, 0.3);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide,
+                    alphaTest: 0.5
                 });
-                this.ghost.scale.set(0.15, 0.15, 0.15);
+                this.ghost = new THREE.Mesh(geometry, material);
             } else {
                 this.ghost = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.1), new THREE.MeshBasicMaterial({
                     color: 0xffffff,
@@ -367,7 +366,8 @@ class ChristmasApp {
             this.ghost.visible = true;
 
             const isBellMode = this.selectedShape.startsWith('bell');
-            if (!isGiftMode && this.ghost.material) {
+
+            if (!isGiftMode && !isBellMode && this.ghost.material) {
                 this.ghost.material.color.setHex(this.selectedColor);
             }
             if (isGiftMode) {
@@ -377,7 +377,7 @@ class ChristmasApp {
                 const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
                 let offsetAmount = 0.06;
                 if (this.selectedShape === 'star') offsetAmount = 0.08;
-                if (isBellMode) offsetAmount = 0.08;
+                if (isBellMode) offsetAmount = 0.02;
 
                 this.ghost.position.copy(hit.point.clone().add(normal.multiplyScalar(offsetAmount)));
                 this.ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
@@ -408,20 +408,32 @@ class ChristmasApp {
             };
             pop();
         }
-        //bell
+        //bell png
         else if (this.selectedShape.startsWith('bell')) {
-            const originalModel = this.bellModels[this.selectedShape];
-            if (!originalModel) return;
+            const texture = this.bellModels[this.selectedShape];
+            if (!texture) return;
 
-            const mesh = originalModel.clone();
+            //flat plane
+            const geometry = new THREE.PlaneGeometry(0.3, 0.3);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                alphaTest: 0.5,
+                side: THREE.DoubleSide
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(pos);
             mesh.quaternion.copy(quat);
-            mesh.scale.set(0, 0, 0);
 
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            mesh.scale.set(0, 0, 0);
             this.ornamentContainer.add(mesh);
             this.ornaments.push({ mesh, color: null });
             let s = 0;
-            const targetScale = 0.15;
+            const targetScale = 1;
             const pop = () => {
                 s += 0.015;
                 mesh.scale.set(s, s, s);
@@ -429,6 +441,8 @@ class ChristmasApp {
             };
             pop();
         }
+
+        //bauble
         else {
             let geometry;
             if (this.selectedShape === 'star') geometry = this.createStarGeometry();
@@ -529,7 +543,7 @@ class ChristmasApp {
                     const first = document.querySelector('.bell-option[data-bell="1"]');
                     if (first) first.classList.add('active');
                 } else {
-                    this.selectedShape = true;
+                    this.selectedShape = type;
                 }
                 this.updateGhost();
 
@@ -553,7 +567,7 @@ class ChristmasApp {
                 opt.classList.add('active');
                 const num = opt.dataset.bell;
                 this.selectedShape = `bell-${num}`;
-                this.updateShost();
+                this.updateGhost();
             });
         });
     }

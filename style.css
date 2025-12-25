@@ -354,7 +354,20 @@ body {
     pointer-events: auto;
 }
 
-.gift-option, #bell-option {
+.gift-option {
+    width: 50px;
+    height: 50px;
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bell-option {
     width: 50px;
     height: 50px;
     background: transparent;
