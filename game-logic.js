@@ -301,6 +301,12 @@ class ChristmasApp {
         };
         const onClick = (e) => {
             if (e.target.closest('#ui')) return;
+
+            const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            this.mouse.x = (x / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(y / window.innerHeight) * 2 + 1;
+            this.checkIntersection();
             if (this.ghost.visible) {
                 this.placeItem(this.ghost.position, this.ghost.quaternion);
             }
@@ -310,9 +316,21 @@ class ChristmasApp {
         window.addEventListener('resize', () => this.onResize());
     }
     updateGhost() {
-        this.scene.remove(this.ghost);
-        if (this.ghost.geometry) this.ghost.geometry.dispose();
-
+        if (this.ghost){
+            this.scene.remove(this.ghost);
+            this.ghost.traverse((child) => {
+                if (child.isMesh){
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material){
+                        if(Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+        }
         if (this.selectedShape.startsWith('gift')) {
             const model = this.giftModels[this.selectedShape];
             if (model) {
@@ -323,6 +341,8 @@ class ChristmasApp {
                         child.material.transparent = true;
                         child.material.opacity = 0.5;
                         child.material.depthWrite = false;
+                        child.castShadow = false;
+                        child.receiveShadow = false;
                     }
                 });
                 this.ghost.scale.set(0.2, 0.2, 0.2);
@@ -523,6 +543,10 @@ class ChristmasApp {
 
         giftBtn.onclick = () => {
             menu.classList.toggle('open');
+
+            if(!menu.classList.contains('open')){
+                giftSubmenu.classList.remove('visible');
+            }
         };
         const itemBtns = menu.querySelectorAll('.item-btn');
         itemBtns.forEach(btn => {
