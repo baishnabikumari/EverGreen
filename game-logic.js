@@ -277,6 +277,20 @@ class ChristmasApp {
         this.mouse = new THREE.Vector2();
         this.hoveredItem = null;
 
+        const startMusic = () => {
+            const music = document.getElementById('bg-music');
+            if (music){
+                music.volume = 0.3;
+                music.play().catch(e => console.log("waiting to play the audio"));
+            }
+            window.removeEventListener('click', startMusic);
+            window.removeEventListener('keydown', startMusic);
+            window.removeEventListener('touchstart', startMusic);
+        };
+        window.addEventListener('click', startMusic);
+        window.addEventListener('keydown', startMusic);
+        window.addEventListener('touchstart', startMusic);
+
         this.ghostGeometry = this.createBaubleGeometry();
         this.ghostMaterial = new THREE.MeshBasicMaterial({
             color: 0xffffff,
