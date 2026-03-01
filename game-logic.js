@@ -16,7 +16,7 @@ class ChristmasApp {
         this.ornaments = [];
         this.gifts = [];
         this.selectedColor = COLORS[0];
-        this.selectedShape = 'bauble';
+        this.selectedShape = null;
 
         this.giftModels = {};
         //this.bellModels = {};
@@ -275,6 +275,7 @@ class ChristmasApp {
     setupInteraction() {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        this.hoveredItem = null;
 
         this.ghostGeometry = this.createBaubleGeometry();
         this.ghostMaterial = new THREE.MeshBasicMaterial({
@@ -307,7 +308,19 @@ class ChristmasApp {
             this.mouse.x = (x / window.innerWidth) * 2 - 1;
             this.mouse.y = -(y / window.innerHeight) * 2 + 1;
             this.checkIntersection();
-            if (this.ghost.visible) {
+
+            if (this.hoveredItem){
+                this.scene.remove(this.hoveredItem);
+                this.ornamentContainer.remove(this.hoveredItem);
+
+                this.ornaments = this.ornaments.filter(o => o.mesh !== this.hoveredItem);
+                this.gifts = this.gifts.filter(g => g != this.hoveredItem);
+
+                if(this.hoveredItem.geometry) this.hoveredItem.geometry.dispose();
+                this.hoveredItem = null;
+                this.checkIntersection();
+            }
+            else if (this.ghost.visible) {
                 this.placeItem(this.ghost.position, this.ghost.quaternion);
             }
         };
@@ -331,6 +344,7 @@ class ChristmasApp {
                 }
             });
         }
+        if (!this.selectedShape) return;
         if (this.selectedShape.startsWith('gift')) {
             const model = this.giftModels[this.selectedShape];
             if (model) {
@@ -381,6 +395,11 @@ class ChristmasApp {
     }
     checkIntersection() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        if(this.hoveredItem && this.hoveredItem.originalHex !== undefined){
+            if(this.hoveredItem.material) this.hoveredItem.material.color.setHex(this.hoveredItem.originalHex);
+            this.hoveredItem = null;
+        }
         let intersectTarget = [];
         const isGiftMode = this.selectedShape.startsWith('gift');
         if (isGiftMode) {
@@ -390,16 +409,48 @@ class ChristmasApp {
                 if (child.isMesh && child.name === "TreeSurface") intersectTarget.push(child);
             });
         }
+
+        const ornamentMeshes = this.ornaments.map(o => o.mesh);
+        intersectTarget = [...intersectTarget, ...ornamentMeshes, ...this.gifts];
+
         const intersects = this.raycaster.intersectObjects(intersectTarget);
 
         if (intersects.length > 0) {
-            const hit = intersects[0];
+            let hit = intersects.find(i => 
+                this.ornaments.some(o => o.mesh === i.object) ||
+                this.gifts.includes(i.object)
+            );
+            let isExistingItem = true;
+            if(!hit){
+                hit = intersects[0];
+                isExistingItem = false;
+            }
+            const object = hit.object;
+
+            if (isExistingItem){
+            this.ghost.visible = false;
+            this.hoveredItem = object;
+            
+                if(object.material && object.material.color){
+                    if(this.hoveredItem.originalHex === undefined){
+                        this.hoveredItem.originalHex = object.material.color.getHex();
+                    }
+                    object.material.color.setHex(0xff0000);
+                }
+            }
+            if(!this.selectedShape){
+                this.ghost.visible = false;
+                this.canvas.style.cursor = 'default';
+                return;
+            }
+            this.hoveredItem = null;
+            this.canvas.style.cursor = 'default';
             this.ghost.visible = true;
 
             const isBellMode = this.selectedShape.startsWith('bell');
 
-            if (!isGiftMode && this.ghost.material) {
-                this.ghost.material.color.setHex(this.selectedColor);
+            if (!isGiftMode && this.ghost.material && !this.selectedShape.startsWith('gift')){
+                if(this.ghost.material.color) this.ghost.material.color.setHex(this.selectedColor);
             }
             if (isGiftMode) {
                 this.ghost.position.copy(hit.point);
@@ -414,8 +465,11 @@ class ChristmasApp {
             }
         } else {
             this.ghost.visible = false;
+            this.hoveredItem = null;
+            this.canvas.style.cursor = 'default';
         }
     }
+
     placeItem(pos, quat) {
         if (this.selectedShape.startsWith('gift')) {
             const originalModel = this.giftModels[this.selectedShape];
@@ -442,7 +496,7 @@ class ChristmasApp {
         else if (this.selectedShape.startsWith('bell')) {
             const texture = this.bellModels[this.selectedShape];
             if (!texture){
-                console.warm("Bell texture not ready yet");
+                console.warn("Bell texture not ready yet");
                 return;
             }
 
@@ -552,40 +606,31 @@ class ChristmasApp {
         itemBtns.forEach(btn => {
             btn.addEventListener('click', () => {
 
-                itemBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
+                const wasActive = btn.classList.contains('active');
                 const type = btn.dataset.type;
 
+                itemBtns.forEach(b => b.classList.remove('active'));
                 giftSubmenu.classList.remove('visible');
                 //bellSubmenu.classList.remove('visible');
                 paletteContainer.classList.remove('hidden');
+                this.selectedShape = null;
+                if(this.ghost) this.ghost.visible = false;
 
-                if (type === 'gift-mode') {
-                    this.selectedShape = 'gift-1';
-                    paletteContainer.classList.add('hidden');
-                    giftSubmenu.classList.add('visible');
+                if(!wasActive){
+                    btn.classList.add('active');
 
-                    document.querySelectorAll('.gift-option').forEach(g => g.classList.remove('active'));
-                    const first = document.querySelectorAll('.gift-option[data-gift="1"]');
-                    if (first) first.classList.add('active');
-                /*
-                } else if (type === 'bell-mode') {
-                    this.selectedShape = 'bell-1';
-                    paletteContainer.classList.add('hidden');
-                    bellSubmenu.classList.add('visible');
-
-                    document.querySelectorAll('.bell-option').forEach(b => b.classList.remove('active'));
-                    const first = document.querySelector('.bell-option[data-bell="1"]');
-                    if (first) first.classList.add('active');
-                */
-                } 
-                
-                else {
-                    this.selectedShape = type;
+                    if(type === 'gift-mode'){
+                        this.selectedShape = 'gift-1';
+                        giftSubmenu.classList.add('visible');
+                        document.querySelectorAll('.gift-option').forEach(g => g.classList.remove('active'));
+                        const first = document.querySelector('.gift-option[data-gift="1"]');
+                        if (first) first.classList.add('active');
+                    } else {
+                        this.selectedShape = type;
+                        paletteContainer.classList.remove('hidden');
+                    }
                 }
                 this.updateGhost();
-
             });
         });
         const giftOptions = document.querySelectorAll('.gift-option');
