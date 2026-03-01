@@ -33,7 +33,12 @@ class ChristmasApp {
         this.animate();
     }
     init() {
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true
+        });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
@@ -283,8 +288,13 @@ class ChristmasApp {
 
         const onMove = (e) => {
             if (!this.treeLoaded) return;
-            const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-            const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+            if(e.target !== this.canvas){
+                this.ghost.visible = false;
+                return;
+            }
+            const x = e.clientX;
+            const y = e.clientY;
             this.mouse.x = (x / window.innerWidth) * 2 - 1;
             this.mouse.y = -(y / window.innerHeight) * 2 + 1;
             this.checkIntersection();
@@ -470,7 +480,7 @@ class ChristmasApp {
             const pop = () => {
                 s += 0.15;
                 mesh.scale.set(s, s, s);
-                if (s < 1) requestAnimationFrame(pop)
+                if (s < 1) requestAnimationFrame(pop);
             };
             pop();
         }
