@@ -346,6 +346,7 @@ body {
     transform: translate(20px);
     pointer-events: none;
     transition: all 0.3s ease;
+    z-index: 40;
 }
 
 #gift-submenu.visible, #bell-submenu.visible{

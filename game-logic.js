@@ -1,3 +1,4 @@
+//import { Children } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -112,15 +113,32 @@ class ChristmasApp {
 
         giftFiles.forEach((file, index) => {
             loader.load(`assets/${file}`, (gltf) => {
-                const model = gltf.scene;
-                model.traverse(c => {
+                const rawModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(rawModel);
+                const center = new THREE.Vector3();
+                const size = new THREE.Vector3();
+                box.getCenter(center);
+                box.getSize(size);
+
+                const wrapper = new THREE.Group();
+                rawModel.position.x = -center.x;
+                rawModel.position.y = -box.min.y;
+                rawModel.position.z = -center.z;
+
+                wrapper.add(rawModel);
+                wrapper.traverse(c => {
                     if (c.isMesh) {
                         c.castShadow = true;
                         c.receiveShadow = true;
                     }
                 });
                 const key = `gift-${index + 1}`;
-                this.giftModels[key] = model;
+                this.giftModels[key] = wrapper;
+
+                //updation the ghost instantly if the gift is selected
+                if(this.selectedShape === key){
+                    this.updateGhost();
+                }
             });
         });
     }
@@ -433,15 +451,15 @@ class ChristmasApp {
             this.hoveredItem = null;
         }
         let intersectTarget = [];
-        const isGiftMode = this.selectedShape.startsWith('gift');
-        if (isGiftMode) {
-            intersectTarget = [this.floor];
+        const isGiftMode = this.selectedShape?.startsWith('gift') ?? false;
+
+        if(isGiftMode){
+            intersectTarget.push(this.floor);
         } else {
             this.treeGroup.traverse((child) => {
                 if (child.isMesh && child.name === "TreeSurface") intersectTarget.push(child);
             });
         }
-
         const ornamentMeshes = this.ornaments.map(o => o.mesh);
         intersectTarget = [...intersectTarget, ...ornamentMeshes, ...this.gifts];
 
@@ -493,7 +511,7 @@ class ChristmasApp {
                 if(this.ghost.material.color) this.ghost.material.color.setHex(this.selectedColor);
             }
             if (isGiftMode) {
-                this.ghost.position.copy(hit.point);
+                this.ghost.position.set(hit.point.x, 0, hit.point.z);
                 this.ghost.quaternion.set(0, 0, 0, 1);
             } else {
                 const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
