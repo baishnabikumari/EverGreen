@@ -451,6 +451,8 @@ class ChristmasApp {
                     }
                     object.material.color.setHex(0xff0000);
                 }
+                this.canvas.style.cursor = 'pointer';
+                return;
             }
             if(!this.selectedShape){
                 this.ghost.visible = false;
@@ -642,6 +644,13 @@ class ChristmasApp {
                     } else {
                         this.selectedShape = type;
                         paletteContainer.classList.remove('hidden');
+
+                        if(type === 'star' || type === 'bauble'){
+                            this.selectedColor = 0xffffff;
+                            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                            const whiteBtn = document.querySelectorAll('.color-btn')[4];
+                            if(whiteBtn) whiteBtn.classList.add('active');
+                        }
                     }
                 }
                 this.updateGhost();
