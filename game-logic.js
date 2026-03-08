@@ -277,6 +277,23 @@ class ChristmasApp {
         this.mouse = new THREE.Vector2();
         this.hoveredItem = null;
 
+        //cross marker for deletion
+        const barGeo = new THREE.BoxGeometry(0.12, 0.03, 0.01);
+        const barMat = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            depthTest: false,
+            transparent: true
+        });
+        const bar1 = new THREE.Mesh(barGeo, barMat);
+        const bar2 = new THREE.Mesh(barGeo, barMat);
+        bar1.rotation.z = Math.PI / 4;
+        bar2.rotation.z = -Math.PI / 4;
+        this.deleteMarker = new THREE.Group();
+        this.deleteMarker.add(bar1,bar2);
+        this.deleteMarker.visible = false;
+        this.deleteMarker.renderOrder = 999; //force the render on top
+        this.scene.add(this.deleteMarker);
+
         const startMusic = () => {
             const music = document.getElementById('bg-music');
             if (music){
@@ -332,6 +349,7 @@ class ChristmasApp {
 
                 if(this.hoveredItem.geometry) this.hoveredItem.geometry.dispose();
                 this.hoveredItem = null;
+                this.deleteMarker.visible = false;
                 this.checkIntersection();
             }
             else if (this.ghost.visible) {
@@ -442,18 +460,24 @@ class ChristmasApp {
             const object = hit.object;
 
             if (isExistingItem){
-            this.ghost.visible = false;
-            this.hoveredItem = object;
+                this.ghost.visible = false;
+                this.hoveredItem = object;
             
-                if(object.material && object.material.color){
-                    if(this.hoveredItem.originalHex === undefined){
-                        this.hoveredItem.originalHex = object.material.color.getHex();
-                    }
-                    object.material.color.setHex(0xff0000);
-                }
+                // if(object.material && object.material.color){
+                //     if(this.hoveredItem.originalHex === undefined){
+                //         this.hoveredItem.originalHex = object.material.color.getHex();
+                //     }
+                //     object.material.color.setHex(0xff0000);
+                // }
+                this.deleteMarker.visible = true;
+                this.deleteMarker.position.copy(object.position);
+                const dir = new THREE.Vector3().subVectors(this.camera.position, object.position).normalize();
+                this.deleteMarker.position.add(dir.multiplyScalar(0.2));
+                this.deleteMarker.lookAt(this.camera.position);
                 this.canvas.style.cursor = 'pointer';
                 return;
             }
+            this.deleteMarker.visible = false;
             if(!this.selectedShape){
                 this.ghost.visible = false;
                 this.canvas.style.cursor = 'default';
